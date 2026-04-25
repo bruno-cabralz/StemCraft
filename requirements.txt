@@ -1,31 +1,43 @@
-# StemSplit VS — Dependências Python
+# StemCraft — Dependências Python
 # Instale com: pip install -r requirements.txt
+#
+# ATENÇÃO — instale o PyTorch ANTES das demais dependências:
+#   GPU NVIDIA (CUDA 12.4):
+#     pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu124
+#   Sem GPU:
+#     pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
+#
+# Depois instale audio-separator e, em seguida, reinstale o torch acima para
+# garantir que o CUDA não seja sobrescrito.
 
 # ── Download de áudio ─────────────────────────────────────────────────────────
-yt-dlp              # Download do YouTube (substitui o youtube-dl)
+yt-dlp              # Download do YouTube
 
 # ── Análise musical ───────────────────────────────────────────────────────────
 librosa>=0.10.0     # BPM, tom, chroma features, segmentação de seções
 numpy>=1.24.0       # Arrays numéricos (base do librosa)
-scipy>=1.11.0       # Processamento de sinal (usado internamente pelo librosa)
+scipy>=1.11.0       # Processamento de sinal (usado pelo librosa e click_track)
 
 # ── Separação de stems ────────────────────────────────────────────────────────
-demucs>=4.0.0       # Separação de instrumentos (Facebook/Meta)
-                    # Requer PyTorch — instale antes: https://pytorch.org
+demucs>=4.0.0       # Separação de instrumentos (Facebook/Meta) — requer PyTorch
+audio-separator     # Separação de voz principal vs backing vocal (UVR)
 
 # ── Síntese de voz (TTS) ─────────────────────────────────────────────────────
 edge-tts>=6.1.9     # Microsoft TTS gratuito, pt-BR de alta qualidade
 
 # ── Leitura/escrita de áudio ──────────────────────────────────────────────────
 soundfile>=0.12.0   # Leitura e escrita de WAV/FLAC
-pydub>=0.25.1       # Manipulação de áudio (opcional, para operações extras)
 
 # ── Interface gráfica (GUI) ───────────────────────────────────────────────────
 customtkinter>=5.2  # UI moderna com tema escuro/claro
 pillow>=10.0.0      # Suporte a imagens (dependência do customtkinter)
 
+# ── Preparador de dataset (prepare_dataset.py) ───────────────────────────────
+rarfile             # Extração de arquivos .rar  (opcional)
+py7zr               # Extração de arquivos .7z   (opcional)
+
 # ── Ferramentas externas (instalar separadamente, não via pip) ────────────────
 # ffmpeg   → https://ffmpeg.org/download.html  (necessário para conversão de áudio)
+#            Win:   winget install ffmpeg
 #            Mac:   brew install ffmpeg
-#            Win:   winget install ffmpeg  (ou baixar o .exe)
 #            Linux: sudo apt install ffmpeg
