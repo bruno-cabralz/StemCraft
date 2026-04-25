@@ -1,0 +1,31 @@
+# StemSplit VS — Dependências Python
+# Instale com: pip install -r requirements.txt
+
+# ── Download de áudio ─────────────────────────────────────────────────────────
+yt-dlp              # Download do YouTube (substitui o youtube-dl)
+
+# ── Análise musical ───────────────────────────────────────────────────────────
+librosa>=0.10.0     # BPM, tom, chroma features, segmentação de seções
+numpy>=1.24.0       # Arrays numéricos (base do librosa)
+scipy>=1.11.0       # Processamento de sinal (usado internamente pelo librosa)
+
+# ── Separação de stems ────────────────────────────────────────────────────────
+demucs>=4.0.0       # Separação de instrumentos (Facebook/Meta)
+                    # Requer PyTorch — instale antes: https://pytorch.org
+
+# ── Síntese de voz (TTS) ─────────────────────────────────────────────────────
+edge-tts>=6.1.9     # Microsoft TTS gratuito, pt-BR de alta qualidade
+
+# ── Leitura/escrita de áudio ──────────────────────────────────────────────────
+soundfile>=0.12.0   # Leitura e escrita de WAV/FLAC
+pydub>=0.25.1       # Manipulação de áudio (opcional, para operações extras)
+
+# ── Interface gráfica (GUI) ───────────────────────────────────────────────────
+customtkinter>=5.2  # UI moderna com tema escuro/claro
+pillow>=10.0.0      # Suporte a imagens (dependência do customtkinter)
+
+# ── Ferramentas externas (instalar separadamente, não via pip) ────────────────
+# ffmpeg   → https://ffmpeg.org/download.html  (necessário para conversão de áudio)
+#            Mac:   brew install ffmpeg
+#            Win:   winget install ffmpeg  (ou baixar o .exe)
+#            Linux: sudo apt install ffmpeg

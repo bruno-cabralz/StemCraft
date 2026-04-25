@@ -1,0 +1,40 @@
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Arquivos temporários e outputs gerados
+.tmp/
+output/
+dataset/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Modelos baixados pelo Demucs / audio-separator
+~/.cache/torch/
+~/.cache/huggingface/
+
+# Logs e arquivos de sistema
+*.log
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Arquivos de áudio grandes (não versionar)
+*.wav
+*.mp3
+*.flac
+*.aiff
+*.aif
+*.ogg
+*.m4a
+*.rar
+*.zip
+*.7z
+
+# VS Code
+.vscode/
