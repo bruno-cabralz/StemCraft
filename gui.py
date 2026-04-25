@@ -18,6 +18,8 @@ from tkinter import messagebox
 # Garante que os módulos core/ são encontrados
 sys.path.insert(0, str(Path(__file__).parent))
 
+from core.config import AVAILABLE_MODELS
+
 # ── Tema global ────────────────────────────────────────────────────────────────
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -37,12 +39,8 @@ ERROR    = "#f05454"   # vermelho erro
 INACTIVE = "#3a3a55"   # cinza inativo
 
 
-# ── Modelos disponíveis ──────────────────────────────────────────────────────
-MODELS = [
-    ("htdemucs_6s", "htdemucs_6s", "6 stems nativos  •  Guitarra e teclado incluísos"),
-    ("htdemucs_ft",  "htdemucs_ft",  "Alta qualidade vocal  •  + guitarra/teclado via 2ª passagem"),
-    ("mdx_extra_q",  "mdx_extra_q",  "Melhor voz  •  MDX 2021  •  + guitarra/teclado via 2ª passagem"),
-]
+# ── Modelos disponíveis (definidos em core/config.py) ───────────────────────
+MODELS = AVAILABLE_MODELS
 
 # ── Definição dos passos do pipeline ──────────────────────────────────────────
 STEPS = [

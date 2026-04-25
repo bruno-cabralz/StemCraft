@@ -7,12 +7,16 @@ env/
 .tmp/
 output/
 dataset/
+logs/
 
 # Cache Python
 __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+*.egg-info/
+dist/
+build/
 
 # Modelos baixados pelo Demucs / audio-separator
 ~/.cache/torch/
@@ -28,6 +32,9 @@ desktop.ini
 *.wav
 *.mp3
 *.flac
+*.rar
+*.zip
+*.7z
 *.aiff
 *.aif
 *.ogg

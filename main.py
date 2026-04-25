@@ -24,7 +24,6 @@ from core.downloader   import download_audio
 from core.analyzer     import analyze_track
 from core.separator    import separate_stems
 from core.click_track  import generate_click_track
-from core.guide_voice  import generate_guide_voice
 from core.exporter     import export_all
 from core.utils        import print_banner, print_step, print_success, print_error
 
@@ -63,14 +62,9 @@ def main():
         click_path = generate_click_track(track_info, audio_path)
         print_success(f"Click track: {click_path}")
 
-        # ── 6. Voz guia ──────────────────────────────────────────────────────
-        print_step(5, "Gerando voz guia com marcadores de seção...")
-        guide_path = generate_guide_voice(track_info, audio_path)
-        print_success(f"Voz guia: {guide_path}")
-
-        # ── 7. Exportação final ───────────────────────────────────────────────
-        print_step(6, "Organizando e exportando todos os arquivos...")
-        output_dir = export_all(audio_path, stems, click_path, guide_path, track_info)
+        # ── 6. Exportação final ───────────────────────────────────────────────
+        print_step(5, "Organizando e exportando todos os arquivos...")
+        output_dir = export_all(audio_path, stems, click_path, None, track_info)
         print_success(f"Projeto exportado em: {output_dir}")
 
         print("\n✅ Pronto! Arraste os WAVs para sua DAW e bora tocar! 🎛️\n")

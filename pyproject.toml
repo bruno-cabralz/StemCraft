@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "stemcraft"
+version = "1.0.0"
+description = "Gerador automático de multitracks profissionais a partir de qualquer vídeo do YouTube"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary — © 2026 Bruno Cabral. Todos os direitos reservados." }
+authors = [{ name = "Bruno Cabral" }]
+
+[tool.setuptools.packages.find]
+include = ["core*"]
+
+# ── Scripts de linha de comando ───────────────────────────────────────────────
+[project.scripts]
+stemcraft     = "main:main"
+
+# ── Configuração do pytest ─────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths   = ["tests"]
+python_files = ["test_*.py"]
+
+# ── Configuração do ruff (linter) ─────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]   # linhas longas OK em comentários de constantes

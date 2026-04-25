@@ -1,35 +1,20 @@
 """
-core/utils.py — Utilitários compartilhados
-==========================================
-Constantes globais, helpers de terminal e funções auxiliares
-usadas por todos os outros módulos.
+core/utils.py — Helpers de terminal e funções utilitárias
+=========================================================
+Funções auxiliares compartilhadas por todos os módulos.
+Constantes e caminhos vivem em core/config.py.
 """
 
 import re
-from pathlib import Path
 
-
-# ── Diretórios do projeto ─────────────────────────────────────────────────────
-# BASE_DIR aponta para a raiz do projeto (onde está o main.py)
-BASE_DIR   = Path(__file__).parent.parent
-
-# Pasta temporária para arquivos intermediários (download, demucs, tts)
-TEMP_DIR   = BASE_DIR / ".tmp"
-
-# Pasta final com os stems exportados
-OUTPUT_DIR = BASE_DIR / "output"
-
-# Mapeamento de nomes internos → rótulos em português
-STEM_LABELS = {
-    "lead_vocals":    "Voz_Principal",
-    "backing_vocals": "Voz_Backing",
-    "vocals":         "Voz",
-    "drums":          "Bateria",
-    "bass":           "Baixo",
-    "guitar":         "Guitarra",
-    "piano":          "Piano",
-    "other":          "Outros",
-}
+# Re-exporta as constantes de config para manter compatibilidade com imports
+# existentes do tipo: from .utils import TEMP_DIR, OUTPUT_DIR, STEM_LABELS
+from .config import (  # noqa: F401
+    BASE_DIR,
+    TEMP_DIR,
+    OUTPUT_DIR,
+    STEM_LABELS,
+)
 
 
 # ── Helpers de terminal colorido ──────────────────────────────────────────────

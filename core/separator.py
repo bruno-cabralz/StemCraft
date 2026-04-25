@@ -16,24 +16,7 @@ import subprocess
 import shutil
 from pathlib import Path
 
-from .utils import TEMP_DIR, OUTPUT_DIR
-
-
-# Modelo padrão (usado quando nenhum é especificado)
-DEFAULT_MODEL = "htdemucs_ft"
-
-# Stems possíveis por modelo
-STEMS_6 = {"vocals", "drums", "bass", "piano", "guitar", "other"}
-
-# Mapeamento dos nomes internos do Demucs → nomes legíveis em pt-BR
-STEM_LABELS = {
-    "vocals": "Voz",
-    "drums":  "Bateria",
-    "bass":   "Baixo",
-    "piano":  "Piano",
-    "guitar": "Guitarra",
-    "other":  "Outros",
-}
+from .config import DEFAULT_MODEL, STEM_LABELS, STEMS_6S, TEMP_DIR, OUTPUT_DIR
 
 
 def separate_stems(audio_path, model: str = None) -> dict:
