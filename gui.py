@@ -180,6 +180,7 @@ class StemSplitApp(ctk.CTk):
         self.grid_rowconfigure(1, weight=1)
         self._build_header()
         self._build_body()
+        self._build_footer()
 
     def _build_header(self):
         header = ctk.CTkFrame(self, fg_color=CARD, corner_radius=0, height=76)
@@ -383,6 +384,19 @@ class StemSplitApp(ctk.CTk):
             border_width=1, border_color=SUCCESS,
             command=self._open_output_folder,
         ).pack(padx=28, pady=(0, 24), fill="x")
+
+    def _build_footer(self):
+        footer = ctk.CTkFrame(self, fg_color=CARD, corner_radius=0, height=30)
+        footer.grid(row=2, column=0, sticky="ew")
+        footer.grid_propagate(False)
+        footer.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            footer,
+            text="© 2026 StemCraft by Bruno Cabral  •  Todos os direitos reservados  •  Proibida cópia ou redistribuição sem autorização",
+            font=ctk.CTkFont("Segoe UI", 9),
+            text_color=SUBTEXT,
+        ).grid(row=0, column=0, pady=7)
 
     def _card(self, parent, row: int) -> ctk.CTkFrame:
         f = ctk.CTkFrame(
