@@ -12,7 +12,7 @@ license = { text = "Proprietary — © 2026 Bruno Cabral. Todos os direitos rese
 authors = [{ name = "Bruno Cabral" }]
 
 [tool.setuptools.packages.find]
-include = ["core*"]
+include = ["stemcraft*"]
 
 # ── Scripts de linha de comando ───────────────────────────────────────────────
 [project.scripts]

@@ -8,10 +8,10 @@ Execute com:  python -m pytest tests/
 import sys
 from pathlib import Path
 
-# Garante que o pacote core/ é encontrado ao rodar da raiz
+# Garante que o pacote stemcraft/ é encontrado ao rodar da raiz
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.config import (
+from stemcraft.config import (
     BASE_DIR,
     TEMP_DIR,
     OUTPUT_DIR,

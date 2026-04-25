@@ -160,15 +160,20 @@ python prepare_dataset.py --drive "G:\Meu Drive\Multitracks" --out "D:\dataset"
 StemCraft/
   ├── gui.py               ← Interface gráfica (customtkinter)
   ├── main.py              ← Interface CLI
-  ├── prepare_dataset.py   ← Preparador de dataset para treinamento
+  ├── pyproject.toml       ← Metadados e configurações do projeto
   ├── requirements.txt
-  ├── core/
+  ├── stemcraft/           ← Pacote principal da aplicação
+  │   ├── config.py        ← Constantes centralizadas (SSoT)
   │   ├── analyzer.py      ← Detecção de BPM, tom e seções
   │   ├── downloader.py    ← Download do YouTube (yt-dlp)
   │   ├── separator.py     ← Separação de stems (Demucs + audio-separator)
   │   ├── click_track.py   ← Geração do metrônomo
   │   ├── exporter.py      ← Organização e exportação dos arquivos
-  │   └── utils.py         ← Constantes e helpers
+  │   └── utils.py         ← Helpers de terminal
+  ├── scripts/
+  │   └── prepare_dataset.py   ← Preparador de dataset para treinamento
+  ├── tests/
+  │   └── test_config.py   ← Testes de sanidade
   └── assets/              ← Ícones e recursos da interface
 ```
 

@@ -15,10 +15,10 @@ from pathlib import Path
 import customtkinter as ctk
 from tkinter import messagebox
 
-# Garante que os módulos core/ são encontrados
+# Garante que os módulos stemcraft/ são encontrados
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core.config import AVAILABLE_MODELS
+from stemcraft.config import AVAILABLE_MODELS
 
 # ── Tema global ────────────────────────────────────────────────────────────────
 ctk.set_appearance_mode("dark")
@@ -464,14 +464,14 @@ class StemSplitApp(ctk.CTk):
         try:
             # ── 1. Download ────────────────────────────────────────────────
             set_step(0, "active")
-            from core.downloader import download_audio
+            from stemcraft.downloader import download_audio
             audio_path = download_audio(url)
             set_step(0, "done", f"Salvo: {audio_path.name}")
             log(f"✓ Áudio salvo: {audio_path.name}")
 
             # ── 2. Análise ─────────────────────────────────────────────────
             set_step(1, "active")
-            from core.analyzer import analyze_track
+            from stemcraft.analyzer import analyze_track
             track_info = analyze_track(audio_path)
             detail = (
                 f"BPM: {track_info['bpm']:.1f}  •  "
@@ -483,7 +483,7 @@ class StemSplitApp(ctk.CTk):
 
             # ── 3. Separação de stems ──────────────────────────────────────
             set_step(2, "active")
-            from core.separator import separate_stems, extract_guitar_piano
+            from stemcraft.separator import separate_stems, extract_guitar_piano
             stems = separate_stems(audio_path, model=self._model)
             # Se o modelo não gerou guitar/piano, faz 2ª passagem no stem "other"
             if "guitar" not in stems and "other" in stems:
@@ -497,7 +497,7 @@ class StemSplitApp(ctk.CTk):
 
             # ── 4. Camadas vocais (lead / backing) ────────────────────────
             set_step(3, "active")
-            from core.separator import separate_vocals_layers
+            from stemcraft.separator import separate_vocals_layers
             if "vocals" in stems:
                 lead_path, backing_path = separate_vocals_layers(stems["vocals"])
                 del stems["vocals"]
@@ -512,14 +512,14 @@ class StemSplitApp(ctk.CTk):
 
             # ── 5. Click track ─────────────────────────────────────────────
             set_step(4, "active")
-            from core.click_track import generate_click_track
+            from stemcraft.click_track import generate_click_track
             click_path = generate_click_track(track_info, audio_path)
             set_step(4, "done", f"{int(round(track_info['bpm']))} BPM")
             log(f"✓ Click track gerado")
 
             # ── 6. Exportação ──────────────────────────────────────────────
             set_step(5, "active")
-            from core.exporter import export_all
+            from stemcraft.exporter import export_all
             output_dir = export_all(audio_path, stems, click_path, None, track_info)
             set_step(5, "done", f"output/{output_dir.name}")
             log(f"✓ Exportado em: {output_dir}")

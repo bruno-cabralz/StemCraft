@@ -17,15 +17,15 @@ O script vai pedir o link do YouTube e cuidar de tudo:
 import sys
 from pathlib import Path
 
-# Garante que o Python encontra os módulos da pasta core/
+# Garante que o Python encontra os módulos da pasta stemcraft/
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core.downloader   import download_audio
-from core.analyzer     import analyze_track
-from core.separator    import separate_stems
-from core.click_track  import generate_click_track
-from core.exporter     import export_all
-from core.utils        import print_banner, print_step, print_success, print_error
+from stemcraft.downloader   import download_audio
+from stemcraft.analyzer     import analyze_track
+from stemcraft.separator    import separate_stems
+from stemcraft.click_track  import generate_click_track
+from stemcraft.exporter     import export_all
+from stemcraft.utils        import print_banner, print_step, print_success, print_error
 
 
 def main():
