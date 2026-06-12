@@ -29,7 +29,9 @@ import json
 import random
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -52,11 +54,20 @@ STEM_MAP = {
 
     "voz2":          "backing_vocals",
     "bg":            "backing_vocals",
+    "bgvs":          "backing_vocals",
+    "bgvs 2":        "backing_vocals",
     "back":          "backing_vocals",
     "backing":       "backing_vocals",
     "backing vocal": "backing_vocals",
     "coro":          "backing_vocals",
     "vozes":         "backing_vocals",
+    "choir":         "backing_vocals",
+    "tenor":         "backing_vocals",
+    "alto":          "backing_vocals",
+    "soprano":       "backing_vocals",
+    "oohs":          "backing_vocals",
+    "vox fx":        "backing_vocals",
+    "vox chop":      "backing_vocals",
 
     # Bateria / Percussão
     "bateria":     "drums",
@@ -66,20 +77,35 @@ STEM_MAP = {
     "perc":        "drums",
     "percussao":   "drums",
     "percussão":   "drums",
+    "shaker":      "drums",
+    "clap":        "drums",
+    "kick":        "drums",
+    "bumbo":       "drums",
+    "kit":         "drums",
+    "tambourine":  "drums",
 
     # Baixo
     "baixo":  "bass",
     "bass":   "bass",
 
-    # Teclado / Piano
-    "teclado":  "keys",
-    "keys":     "keys",
-    "piano":    "keys",
-    "pad":      "keys",
-    "synth":    "keys",
-    "orgao":    "keys",
-    "órgão":    "keys",
-    "strings":  "keys",
+    # Teclado / Piano  →  "piano" é o nome que o htdemucs_6s usa como stem
+    "teclado":  "piano",
+    "keys":     "piano",
+    "piano":    "piano",
+    "pad":      "piano",
+    "synth":    "piano",
+    "synt":     "piano",
+    "orgao":    "piano",
+    "organ":    "piano",
+    "órgão":    "piano",
+    "strings":  "piano",
+    "string":   "piano",
+    "rhodes":   "piano",
+    "bells":    "piano",
+    "bell":     "piano",
+    "cello":    "piano",
+    "violino":  "piano",
+    "violinos": "piano",
 
     # Guitarra elétrica
     "guitarra":       "guitar",
@@ -107,10 +133,86 @@ STEM_MAP = {
     "sopros":    "sopros",
     "brass":     "sopros",
     "horns":     "sopros",
+    "metais":    "sopros",
+
+    # ── Nomes exatos encontrados no dataset gospel ────────────────────────
+    # Violão acústico
+    "ag":            "violao",   # Acoustic Guitar
+    "acoustic guitar": "violao",
+
+    # Guitarras elétricas numeradas (EG 1, EG 2, EG 3 …)
+    "eg":            "guitar",   # Electric Guitar
+    "eg 1":          "guitar",
+    "eg 2":          "guitar",
+    "eg 3":          "guitar",
+    "eg 4":          "guitar",
+    "eg 5":          "guitar",
+    "electric guitar": "guitar",
+
+    # Bateria com sufixo "(live)"
+    "drums (live)":  "drums",
+    "drum (live)":   "drums",
+    "bateria (live)": "drums",
 }
 
+# ── Stems a ignorar (click track, guide vocal, waveform peaks) ────────────────
+# Qualquer arquivo cujo nome contenha uma dessas palavras será descartado.
+SKIP_STEMS: frozenset[str] = frozenset({
+    # Click / metrônomo
+    "click",
+    "click track",
+    "clicktrack",
+    "metronome",
+    "metronomo",
+    "metrônomo",
+    # Guia de voz (pista de referência para o cantor)
+    "guide",
+    "guide vocal",
+    "guide_vocal",
+    "guia",
+    "voz guia",
+    "voz_guia",
+    # Arquivos de pico de forma de onda (não são áudio real)
+    "peaks",
+    # Mix completo (não é um stem separado)
+    "master",
+    "full mix",
+    "mix",
+    "cues",
+})
+
 # Extensões de áudio aceitas
-AUDIO_EXTS = {".wav", ".mp3", ".flac", ".aiff", ".aif", ".ogg", ".m4a"}
+AUDIO_EXTS = {".wav", ".mp3", ".flac", ".aiff", ".aif", ".ogg", ".m4a", ".wma"}
+
+
+def read_audio_file(path: Path) -> tuple:
+    """
+    Le um arquivo de audio e retorna (data_numpy, samplerate).
+    Tenta soundfile primeiro; se falhar, usa pydub+ffmpeg como fallback
+    (suporta .m4a, .wma, .aac, etc).
+    """
+    try:
+        data, sr = sf.read(str(path), always_2d=True)
+        return data, sr
+    except Exception:
+        pass
+
+    # Fallback: pydub converte via ffmpeg para WAV em memoria
+    try:
+        from pydub import AudioSegment
+        audio = AudioSegment.from_file(str(path))
+        sr = audio.frame_rate
+        samples = np.array(audio.get_array_of_samples(), dtype=np.float32)
+        # Normaliza para [-1, 1]
+        samples = samples / (2 ** (audio.sample_width * 8 - 1))
+        # Reshape para (frames, channels)
+        if audio.channels > 1:
+            samples = samples.reshape(-1, audio.channels)
+        else:
+            samples = samples.reshape(-1, 1)
+        return samples, sr
+    except Exception as exc:
+        raise RuntimeError(f"soundfile e pydub falharam: {exc}") from exc
 
 # ── Normalização de nome de stem ──────────────────────────────────────────────
 def normalize_stem_name(filename: str) -> str | None:
@@ -119,6 +221,10 @@ def normalize_stem_name(filename: str) -> str | None:
     Retorna None se o arquivo deve ser ignorado (click track, guide, etc).
     """
     name = Path(filename).stem.lower().strip()
+
+    # Ignora resource forks do macOS (._filename)
+    if name.startswith("._"):
+        return None
 
     # Verifica se deve ser ignorado antes de normalizar
     if name in SKIP_STEMS:
@@ -146,6 +252,23 @@ def normalize_stem_name(filename: str) -> str | None:
 
 
 # ── Extração de RAR ───────────────────────────────────────────────────────────
+
+def _find_7zip() -> str | None:
+    """Retorna o caminho do executavel 7z se disponivel."""
+    import shutil as _shutil
+    found = _shutil.which("7z") or _shutil.which("7za")
+    if found:
+        return found
+    # Caminhos padrão de instalação no Windows
+    for candidate in [
+        r"C:\Program Files\7-Zip\7z.exe",
+        r"C:\Program Files (x86)\7-Zip\7z.exe",
+    ]:
+        if Path(candidate).exists():
+            return candidate
+    return None
+
+
 def extract_archive(archive_path: Path, dest_dir: Path) -> list[Path]:
     """
     Extrai .zip, .rar ou .7z para dest_dir.
@@ -164,13 +287,29 @@ def extract_archive(archive_path: Path, dest_dir: Path) -> list[Path]:
                 zf.extractall(str(dest_dir))
 
         elif ext == ".rar":
+            extracted = False
+            # Tenta rarfile primeiro
             try:
                 import rarfile
                 with rarfile.RarFile(str(archive_path)) as rf:
                     rf.extractall(str(dest_dir))
+                extracted = True
             except ImportError:
-                print(f"  ✕ Instale rarfile para extrair .rar:  pip install rarfile")
-                return []
+                pass
+            except Exception:
+                pass
+            # Fallback: 7-Zip (suporta RAR5)
+            if not extracted:
+                seven_zip = _find_7zip()
+                if seven_zip:
+                    result = subprocess.run(
+                        [seven_zip, "x", str(archive_path), f"-o{dest_dir}", "-y"],
+                        capture_output=True,
+                    )
+                    if result.returncode != 0:
+                        raise RuntimeError(result.stderr.decode(errors="replace").strip())
+                else:
+                    raise RuntimeError("rarfile falhou e 7-Zip nao encontrado. Instale: winget install 7zip.7zip")
 
         elif ext == ".7z":
             try:
@@ -178,16 +317,23 @@ def extract_archive(archive_path: Path, dest_dir: Path) -> list[Path]:
                 with py7zr.SevenZipFile(str(archive_path), mode="r") as sz:
                     sz.extractall(path=str(dest_dir))
             except ImportError:
-                print(f"  ✕ Instale py7zr para extrair .7z:  pip install py7zr")
+                print(f"  [ERRO] Instale py7zr para extrair .7z:  pip install py7zr")
                 return []
 
         else:
-            print(f"  ✕ Formato não suportado: {ext}")
+            print(f"  [ERRO] Formato nao suportado: {ext}")
             return []
 
     except Exception as exc:
-        print(f"  ✕ Erro ao extrair {archive_path.name}: {exc}")
+        print(f"  [ERRO] Erro ao extrair {archive_path.name}: {exc}")
         return []
+
+    # Extrai arquivos aninhados (.rar contendo .zip, etc.)
+    for nested in list(dest_dir.rglob("*")):
+        if nested.suffix.lower() in {".zip", ".rar", ".7z"}:
+            nested_audio = extract_archive(nested, nested.parent / nested.stem)
+            if nested_audio:
+                nested.unlink(missing_ok=True)
 
     return [f for f in dest_dir.rglob("*") if f.suffix.lower() in AUDIO_EXTS]
 
@@ -199,11 +345,11 @@ def mix_stems(stem_paths: list[Path], out_path: Path) -> bool:
         arrays = []
         sr = None
         for p in stem_paths:
-            data, file_sr = sf.read(str(p), always_2d=True)
+            data, file_sr = read_audio_file(p)
             if sr is None:
                 sr = file_sr
             elif file_sr != sr:
-                print(f"  ⚠ Sample rate diferente em {p.name}: {file_sr} vs {sr}")
+                print(f"  [AVISO] Sample rate diferente em {p.name}: {file_sr} vs {sr}")
                 continue
             arrays.append(data)
 
@@ -223,7 +369,7 @@ def mix_stems(stem_paths: list[Path], out_path: Path) -> bool:
         return True
 
     except Exception as exc:
-        print(f"  ✕ Erro ao gerar mixture: {exc}")
+        print(f"  [ERRO] Erro ao gerar mixture: {exc}")
         return False
 
 
@@ -288,7 +434,7 @@ def prepare(drive_root: Path, out_root: Path, seed: int = 42, valid_ratio: float
         dest_song = (valid_dir if split == "valid" else train_dir) / musica_id
 
         if dest_song.exists():
-            print(f"  → Pulando (já processada): {musica_id}")
+            print(f"  >> Pulando (ja processada): {musica_id}")
             ok_count += 1
             continue
 
@@ -312,7 +458,7 @@ def prepare(drive_root: Path, out_root: Path, seed: int = 42, valid_ratio: float
 
             # Ignora click track, guide e similares
             if stem_class is None:
-                print(f"  ⊘ Ignorado (não é stem musical): {af.name}")
+                print(f"  [SKIP] Ignorado (nao e stem musical): {af.name}")
                 continue
 
             seen_classes[stem_class] += 1
@@ -323,19 +469,19 @@ def prepare(drive_root: Path, out_root: Path, seed: int = 42, valid_ratio: float
 
             # Converte para WAV 44100 Hz mono/stereo preservado
             try:
-                data, sr = sf.read(str(af), always_2d=True)
+                data, sr = read_audio_file(af)
                 sf.write(str(out_path), data, sr)
                 stem_paths.append(out_path)
                 stem_frequency[stem_class] += 1
-                print(f"  ↳ {af.name}  →  {out_fname}")
+                print(f"     {af.name}  ->  {out_fname}")
             except Exception as exc:
-                print(f"  ✕ Não foi possível converter {af.name}: {exc}")
+                print(f"  [ERRO] Nao foi possivel converter {af.name}: {exc}")
 
         # Gera mixture.wav
         if stem_paths:
             mix_path = dest_song / "mixture.wav"
             if mix_stems(stem_paths, mix_path):
-                print(f"  ✓ mixture.wav gerada")
+                print(f"  [OK] mixture.wav gerada")
                 ok_count += 1
             else:
                 shutil.rmtree(dest_song, ignore_errors=True)
@@ -358,8 +504,8 @@ def prepare(drive_root: Path, out_root: Path, seed: int = 42, valid_ratio: float
     print("  Frequência de stems:")
     print("  " + "-" * 40)
     for stem, count in stem_frequency.most_common():
-        bar  = "█" * (count * 30 // max(stem_frequency.values()))
-        flag = "  ← classe própria recomendada" if count >= 40 else ("  ← agrupar em 'other'" if count < 15 else "")
+        bar  = "#" * (count * 30 // max(stem_frequency.values()))
+        flag = "  <- classe propria recomendada" if count >= 40 else ("  <- agrupar em 'other'" if count < 15 else "")
         print(f"  {stem:<18} {count:>4}  {bar}{flag}")
 
     # Salva relatório em JSON

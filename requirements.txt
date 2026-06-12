@@ -33,8 +33,11 @@ customtkinter>=5.2  # UI moderna com tema escuro/claro
 pillow>=10.0.0      # Suporte a imagens (dependência do customtkinter)
 
 # ── Preparador de dataset (prepare_dataset.py) ───────────────────────────────
-rarfile             # Extração de arquivos .rar  (opcional)
-py7zr               # Extração de arquivos .7z   (opcional)
+rarfile            # Extração de arquivos .rar  (opcional)
+py7zr              # Extração de arquivos .7z   (opcional)
+
+# ── Download do Google Drive (download_gdrive.py) ─────────────────────────────
+gdown>=5.1.0       # Download de pastas compartilhadas do Google Drive
 
 # ── Ferramentas externas (instalar separadamente, não via pip) ────────────────
 # ffmpeg   → https://ffmpeg.org/download.html  (necessário para conversão de áudio)

@@ -1,7 +1,8 @@
-# 🎛️ StemCraft
+# StemCraft
 
 > **Gerador automático de multitracks profissionais** a partir de qualquer vídeo do YouTube.  
-> Separa os instrumentos em faixas individuais com IA, detecta BPM e tom, e entrega tudo pronto para sua DAW.
+> Separa os instrumentos em faixas individuais com IA, detecta BPM e tom, e entrega tudo pronto para sua DAW.  
+> Inclui pipeline completo de fine-tuning do Demucs com dataset gospel próprio.
 
 ---
 
@@ -9,13 +10,13 @@
 
 | Recurso | Detalhe |
 |---|---|
-| 📥 Download do YouTube | Qualidade máxima via yt-dlp |
-| 🔍 Detecção automática | BPM, tom musical e seções da música |
-| 🎛️ Separação de stems | Bateria, Baixo, Guitarra, Piano, Voz — via Demucs 4 |
-| 🎤 Voz principal + backing | Separação em duas camadas vocais independentes |
-| 🥁 Click Track | Metrônomo sincronizado com o BPM real da faixa |
-| 💾 Exportação para DAW | WAV 24-bit organizados e numerados |
-| 🗂️ Preparador de dataset | Script para fine-tuning de modelos Demucs personalizados |
+| Download do YouTube | Qualidade máxima via yt-dlp + ffmpeg |
+| Detecção automática | BPM, tom musical e seções da música |
+| Separacao de stems | Bateria, Baixo, Guitarra, Piano, Voz — via Demucs HTDemucs |
+| Click Track | Metronomo sincronizado com o BPM real da faixa |
+| Exportacao para DAW | WAV organizados e numerados prontos para importar |
+| Interface grafica | GUI com tema escuro via customtkinter |
+| Fine-tuning | Pipeline completo para treinar o Demucs com dataset proprio |
 
 ---
 
@@ -23,20 +24,19 @@
 
 | Modelo | Stems | Quando usar |
 |---|---|---|
-| `htdemucs_6s` *(padrão)* | Voz, Bateria, Baixo, Guitarra, Piano, Outros | Melhor para a maioria dos casos |
-| `htdemucs_ft` | Voz, Bateria, Baixo, Outros + 2ª passagem | Prioridade na qualidade vocal |
-| `mdx_extra_q` | Voz, Bateria, Baixo, Outros + 2ª passagem | Máximo isolamento de voz (MDX 2021) |
-
-> Modelos de 4 stems executam automaticamente uma 2ª passagem com `htdemucs_6s` para extrair guitarra e piano do stem "outros".
+| `htdemucs_6s` *(padrão)* | Voz, Bateria, Baixo, Guitarra, Piano, Outros | Uso geral |
+| `htdemucs_ft` | Voz, Bateria, Baixo, Outros | Prioridade na qualidade vocal |
+| `mdx_extra_q` | Voz, Bateria, Baixo, Outros | Maximo isolamento de voz |
+| modelo fine-tunado | igual ao htdemucs_6s | Gospel — treinado com 500+ multitracks |
 
 ---
 
 ## Requisitos
 
 - **Python** 3.11 ou superior
-- **ffmpeg** instalado no sistema e no PATH
-- **PyTorch** (com CUDA para GPU NVIDIA — fortemente recomendado)
-- GPU NVIDIA com pelo menos 4 GB de VRAM (ou CPU, mas será muito mais lento)
+- **ffmpeg** instalado no sistema (`winget install ffmpeg`)
+- **7-Zip** para extrair RAR5 (`winget install 7zip.7zip`)
+- **PyTorch** com CUDA (GPU NVIDIA recomendada — pelo menos 4 GB VRAM)
 
 ---
 
@@ -52,24 +52,22 @@ cd StemCraft
 ### 2. Crie e ative o ambiente virtual
 
 ```bash
-python -m venv venv
+python -m venv .venv
 
 # Windows
-venv\Scripts\activate
+.venv\Scripts\Activate.ps1
 
 # Linux / Mac
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
-### 3. Instale o PyTorch
+### 3. Instale o PyTorch com CUDA
 
-**GPU NVIDIA (recomendado — CUDA 12.4):**
 ```bash
+# GPU NVIDIA (CUDA 12.4):
 pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu124
-```
 
-**Sem GPU:**
-```bash
+# Sem GPU:
 pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
 ```
 
@@ -79,78 +77,120 @@ pip install torch torchaudio torchvision --index-url https://download.pytorch.or
 pip install -r requirements.txt
 ```
 
+> Apos instalar o `audio-separator`, reinstale o PyTorch com o comando acima para garantir que o CUDA nao seja sobrescrito.
+
 ---
 
 ## Como usar
 
-### Interface Gráfica (recomendada)
+### Interface Grafica (recomendada)
 
 ```bash
 python gui.py
 ```
 
 1. Cole o link do YouTube no campo de URL
-2. Escolha o modelo de separação
-3. Clique em **⚡ Processar Música**
+2. Escolha o modelo de separacao
+3. Clique em **Processar Musica**
 4. Acompanhe o progresso em tempo real
-5. Clique em **📁 Abrir Pasta de Saída** ao concluir
+5. Clique em **Abrir Pasta de Saida** ao concluir
 
-### Linha de Comando (CLI)
+### Linha de Comando
 
 ```bash
 python main.py
 ```
 
-### Exemplo de saída
+### Exemplo de saida
 
 ```
 output/Nome_da_Musica/
-  ├── 00_CLICK_120bpm.wav        ← metrônomo sincronizado
-  ├── 01_Voz_Principal.wav
-  ├── 02_Voz_Backing.wav
-  ├── 03_Bateria.wav
-  ├── 04_Baixo.wav
-  ├── 05_Guitarra.wav
-  ├── 06_Piano.wav
-  └── 07_Outros.wav
+  00_CLICK_120bpm.wav
+  01_Voz.wav
+  02_Bateria.wav
+  03_Baixo.wav
+  04_Guitarra.wav
+  05_Piano.wav
+  06_Outros.wav
 ```
 
 ---
 
-## Tempo estimado de processamento
+## Tempo estimado (musica de 4 min)
 
-| Etapa | Tempo (música de 4 min) |
-|---|---|
-| Download | 10–30 segundos |
-| Análise BPM/Tom | 20–40 segundos |
-| Demucs (GPU — GTX 1650+) | 30–90 segundos |
-| Demucs (CPU) | 5–15 minutos |
-| Separação vocal (lead/backing) | 1–3 minutos |
-| Click Track | 5–15 segundos |
-| Exportação | 5–10 segundos |
-
-> Com GPU NVIDIA o Demucs é ~10× mais rápido que em CPU.
+| Etapa | GPU RTX 3060 | CPU |
+|---|---|---|
+| Download | 15–30s | 15–30s |
+| Analise BPM/Tom | 20–40s | 20–40s |
+| Separacao Demucs | ~60s | 8–15 min |
+| Click Track + Exportacao | ~15s | ~15s |
 
 ---
 
-## Preparação de Dataset (fine-tuning)
+## Pipeline de Fine-tuning
 
-Script para processar multitracks do Google Drive e gerar um dataset compatível com fine-tuning do Demucs.
+Para especializar o modelo em musica gospel, o projeto inclui scripts completos de preparacao de dataset e treinamento.
+
+### Estrutura esperada do dataset bruto
+
+```
+dataset_raw/
+  ARTISTA/
+    musica.zip   <- stems individuais compactados
+    musica.rar
+```
+
+Suporta `.zip`, `.rar` (incluindo RAR5), `.7z` e arquivos aninhados.  
+Suporta `.wav`, `.mp3`, `.flac`, `.m4a`, `.wma`, `.aif`.
+
+### Passo 1 — Preparar o dataset
 
 ```bash
-# Apenas escanear sem extrair
-python prepare_dataset.py --drive "G:\Meu Drive\Multitracks" --analyze-only
-
-# Preparar dataset completo
-python prepare_dataset.py --drive "G:\Meu Drive\Multitracks" --out "D:\dataset"
+python scripts/prepare_dataset.py --drive "F:\dataset_raw" --out "F:\dataset" --valid-ratio 0.1
 ```
 
-| Argumento | Padrão | Descrição |
+O script faz automaticamente:
+- Extrai os arquivos comprimidos
+- Normaliza nomes dos stems (`EG 1.wav` -> `guitar.wav`, `Choir.wav` -> `backing_vocals.wav`, etc.)
+- Descarta clicks, guides, resource forks do macOS (`._*`), mixdowns completos
+- Gera `mixture.wav` somando todos os stems
+- Divide em `train/` (90%) e `valid/` (10%)
+
+| Argumento | Padrao | Descricao |
 |---|---|---|
-| `--drive` | obrigatório | Caminho raiz dos multitracks |
-| `--out` | `./dataset` | Pasta de saída |
-| `--analyze-only` | — | Apenas escaneia sem extrair |
-| `--valid-ratio` | `0.1` | Proporção de validação (10%) |
+| `--drive` | obrigatorio | Pasta raiz com os multitracks |
+| `--out` | `./dataset` | Pasta de saida |
+| `--valid-ratio` | `0.1` | Proporcao de validacao |
+| `--analyze-only` | — | So escaneia, sem extrair |
+
+### Passo 2 — Treinar
+
+```bash
+# Dry-run: ver configuracao sem executar
+python scripts/train_demucs.py --dataset "F:\dataset" --dry-run
+
+# Fine-tuning a partir do htdemucs_6s pre-treinado (recomendado)
+python scripts/train_demucs.py --dataset "F:\dataset" --mode finetune --batch-size 4 --num-workers 2 --epochs 100
+```
+
+| Argumento | Padrao | Descricao |
+|---|---|---|
+| `--mode` | `finetune` | `finetune` (rapido) ou `scratch` (do zero) |
+| `--batch-size` | auto pela VRAM | 4 para 12 GB, 2 para 6–8 GB |
+| `--num-workers` | `4` | Workers de dados; use `2` se usar o PC durante o treino |
+| `--epochs` | `100` | Epocas de treinamento |
+
+Checkpoints sao salvos a cada 5 epocas em `outputs/`. Para pausar: `Ctrl+C`. Para retomar: rode o mesmo comando novamente.
+
+### Passo 3 — Usar o modelo treinado
+
+Edite `stemcraft/config.py`:
+
+```python
+DEFAULT_MODEL = "outputs/htdemucs-abc1234"  # nome da pasta gerada em outputs/
+```
+
+A partir dai o `main.py` e a GUI usam o modelo fine-tunado automaticamente.
 
 ---
 
@@ -158,52 +198,60 @@ python prepare_dataset.py --drive "G:\Meu Drive\Multitracks" --out "D:\dataset"
 
 ```
 StemCraft/
-  ├── gui.py               ← Interface gráfica (customtkinter)
-  ├── main.py              ← Interface CLI
-  ├── pyproject.toml       ← Metadados e configurações do projeto
-  ├── requirements.txt
-  ├── stemcraft/           ← Pacote principal da aplicação
-  │   ├── config.py        ← Constantes centralizadas (SSoT)
-  │   ├── analyzer.py      ← Detecção de BPM, tom e seções
-  │   ├── downloader.py    ← Download do YouTube (yt-dlp)
-  │   ├── separator.py     ← Separação de stems (Demucs + audio-separator)
-  │   ├── click_track.py   ← Geração do metrônomo
-  │   ├── exporter.py      ← Organização e exportação dos arquivos
-  │   └── utils.py         ← Helpers de terminal
-  ├── scripts/
-  │   └── prepare_dataset.py   ← Preparador de dataset para treinamento
-  ├── tests/
-  │   └── test_config.py   ← Testes de sanidade
-  └── assets/              ← Ícones e recursos da interface
+  gui.py                    <- Interface grafica (customtkinter)
+  main.py                   <- Interface CLI
+  pyproject.toml
+  requirements.txt
+  stemcraft/                <- Pacote principal
+    config.py               <- Constantes centralizadas
+    analyzer.py             <- Deteccao de BPM, tom e secoes
+    downloader.py           <- Download do YouTube (yt-dlp)
+    separator.py            <- Separacao de stems (Demucs)
+    click_track.py          <- Geracao do metronomo
+    exporter.py             <- Organizacao e exportacao dos arquivos
+    utils.py                <- Helpers compartilhados
+  scripts/
+    prepare_dataset.py      <- Preparador de dataset para fine-tuning
+    train_demucs.py         <- Treinamento / fine-tuning do Demucs
+    download_gdrive.py      <- Download de pastas do Google Drive
+    post_download.py        <- Extracao e normalizacao pos-download
+    scan_stems.py           <- Escaneia stems sem extrair
+  tests/
+    test_config.py
+  assets/
 ```
 
 ---
 
 ## Problemas comuns
 
-**"ffmpeg não encontrado"**  
-→ Instale com `winget install ffmpeg` (Windows) ou `brew install ffmpeg` (Mac) e reinicie o terminal.
+**"ffmpeg nao encontrado"**  
+Instale com `winget install ffmpeg` e reinicie o terminal.
+
+**"Cannot find working tool" ao extrair .rar**  
+Instale o 7-Zip: `winget install 7zip.7zip`
+
+**"OOM / Out of Memory" durante o treino**  
+Reduza o batch size: `--batch-size 2`
 
 **"Demucs demorou muito"**  
-→ Normal em CPU. Use GPU ou deixe em segundo plano. Com GPU a separação de uma música de 4 min leva ~1 min.
+Normal em CPU. Com RTX 3060 a separacao de uma musica de 4 min leva ~60 segundos.
 
-**"audio-separator quebrou o PyTorch CUDA"**  
-→ Reinstale o torch depois de instalar as dependências:  
+**"audio-separator quebrou o CUDA"**  
+Reinstale o PyTorch apos instalar as dependencias:  
 `pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu124`
-
-**"A separação ficou com qualidade ruim"**  
-→ Tente o modelo `htdemucs_ft` para melhor qualidade vocal, ou `mdx_extra_q` para máximo isolamento.
 
 ---
 
 ## Tecnologias
 
-- [Demucs](https://github.com/facebookresearch/demucs) — separação de fontes de áudio com IA
-- [audio-separator](https://github.com/karaokenerds/python-audio-separator) — separação de voz principal e backing
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — download de áudio do YouTube
-- [customtkinter](https://github.com/TomSchimansky/CustomTkinter) — interface gráfica moderna
-- [librosa](https://librosa.org/) — análise de áudio (BPM, tom)
-- [PyTorch](https://pytorch.org/) — inferência neural com GPU
+- [Demucs](https://github.com/facebookresearch/demucs) — separacao de fontes de audio com IA
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — download de audio do YouTube
+- [librosa](https://librosa.org/) — analise de audio (BPM, tom)
+- [customtkinter](https://github.com/TomSchimansky/CustomTkinter) — interface grafica moderna
+- [PyTorch](https://pytorch.org/) — inferencia neural com GPU
+- [pydub](https://github.com/jiaaro/pydub) — conversao de formatos de audio via ffmpeg
+- [soundfile](https://python-soundfile.readthedocs.io/) — leitura e escrita de WAV/FLAC
 
 ---
 
@@ -211,6 +259,6 @@ StemCraft/
 
 © 2026 Bruno Cabral. Todos os direitos reservados.
 
-Este software é propriedade intelectual do autor. É **expressamente proibida** a cópia, redistribuição, modificação ou uso comercial sem autorização prévia por escrito.
+Este software e propriedade intelectual do autor. E expressamente proibida a copia, redistribuicao, modificacao ou uso comercial sem autorizacao previa por escrito.
 
-> Desenvolvido para músicos e produtores gospel.
+> Desenvolvido para musicos e produtores gospel.
